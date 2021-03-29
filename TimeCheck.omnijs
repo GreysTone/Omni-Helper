@@ -1,0 +1,31 @@
+/*{
+    "author": "Danyang Song",
+    "targets": ["omnifocus"],
+    "type": "action",
+    "identifier": "me.arthur-song.TimeCheck",
+    "version": "0.1",
+    "description": "Sum the estimated minutes for all selected tasks",
+    "label": "TimeCheck",
+    "mediumLabel": "TimeCheck",
+    "paletteLabel": "TimeCheck",
+}*/
+
+(() => {
+    var action = new PlugIn.Action(function(selection) {
+        var total = 0;
+        selection.tasks.forEach(task => {
+            total += task.estimatedMinutes;
+        });
+        var t_hour = total/60;
+        var proportion = t_hour/10;
+        var alert = new Alert("Time Check", "Total estimate in " + Math.round(t_hour*100)/100 + " hrs\n" + Math.round(proportion*100) + "\% of 10 hrs");
+        alert.show();
+    });
+
+    // If needed, uncomment, and add a function that returns true if the current selection is appropriate for the action.
+    action.validate = function(selection){
+        return selection.tasks.length > 0;
+    };
+        
+    return action;
+})();

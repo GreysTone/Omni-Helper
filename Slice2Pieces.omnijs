@@ -1,0 +1,72 @@
+/*{
+    "author": "Danyang Song",
+    "targets": ["omnifocus"],
+    "type": "action",
+    "identifier": "me.arthur-song.Slice2Pieces",
+    "version": "0.1",
+    "description": "Slice a task to several pieces based on estimated minutes",
+    "label": "Slice2Pieces",
+    "mediumLabel": "Slice2Pieces",
+    "paletteLabel": "Slice2Pieces",
+}*/
+(() => {
+    var action = new PlugIn.Action(function(selection) {
+        var form = new Form();
+        var field_slice = new Form.Field.String("slice", "duration (mins)", "60");
+        var field_remove = new Form.Field.Checkbox("remove", "remove selected task", true);
+        form.addField(field_slice);
+        form.addField(field_remove);
+      
+        promise = form.show("Slice task: " + selection.tasks[0].name, "Slice");
+        promise.then(function(formObject){
+            f_slice = formObject.values["slice"];
+            f_remove = formObject.values["remove"];
+            tar_task = selection.tasks[0];
+          
+            if (tar_task.estimatedMinutes <= f_slice) {
+              var alert = new Alert("No need to slice", ":)");
+              alert.show();
+            } else {
+              var amount = tar_task.estimatedMinutes;
+              var steps = Math.ceil(amount/f_slice);
+              var task_list_id = new Array();
+              for (var i = 0; i < steps; i++) {
+                  if (amount > f_slice) {
+                      var x_task_s = (tar_task.name+" ["+(i+1)+"]") + (" $" + f_slice + "m");
+                      var x_task = Task.byParsingTransportText(x_task_s, true);
+                      task_list_id.push(x_task[0].id.primaryKey);
+                      amount -= f_slice;
+                  } else {
+                      var x_task_s = (tar_task.name+" ["+(i+1)+"]") + (" $" + amount + "m");
+                      var x_task = Task.byParsingTransportText(x_task_s, true);
+                      task_list_id.push(x_task[0].id.primaryKey);
+                  }
+              }
+
+              var prev_task = tar_task;
+              for (var i = 0; i < task_list_id.length; i++) {
+                  var x_task = Task.byIdentifier(task_list_id[i]);
+                  console.log(x_task);
+                  moveTasks([x_task], prev_task.after);
+                  prev_task = x_task;
+              }
+              if (f_remove) {
+                  deleteObject(tar_task);
+              }
+            }
+        });
+        promise.catch(function(error){
+            console.log(error.message);
+        });
+    });
+
+    action.validate = function(selection) {
+      if (selection.tasks[0] && selection.tasks[0].estimatedMinutes > 0) {
+        return true;
+      }
+      return false;
+    };
+    
+        
+    return action;
+})();
